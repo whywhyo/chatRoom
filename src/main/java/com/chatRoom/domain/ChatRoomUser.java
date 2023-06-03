@@ -20,11 +20,30 @@ public class ChatRoomUser implements Serializable {
 
     private String password;
 
+    private String email;
+
+    private String code;
+
+    private Integer status;
+
+    public ChatRoomUser(String username, String password, String email, String code) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.code = code;
+    }
+
     public ChatRoomUser() {
     }
 
     public ChatRoomUser(String username, String password) {
         this.username = username;
         this.password = password;
+    }
+
+    public ChatRoomUser(String username, String password, String email) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
     }
 }

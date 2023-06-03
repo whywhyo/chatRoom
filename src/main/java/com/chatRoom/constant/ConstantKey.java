@@ -9,4 +9,5 @@ package com.chatRoom.constant;
 public class ConstantKey {
     public static final String USER_INFO = "user";
     public static final String LISTEN_SUFFIX = ":listen";
+
 }

@@ -1,4 +1,4 @@
-package com.chatRoom.domain;
+package com.chatRoom.domain.DB;
 
 import lombok.Data;
 
