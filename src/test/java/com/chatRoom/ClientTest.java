@@ -32,7 +32,7 @@ import java.util.Random;
 import static com.chatRoom.constant.MessageType.*;
 
 /**
- * @Author Jinquan_Ou
+ * @Author Mei_Deng
  * @Description
  * @Date 2023-05-30 19:14
  * @Version 1.0.0
@@ -82,6 +82,17 @@ public class ClientTest {
         message.setMessageType(LOGOUT);
         message.setSender("小红");
         clientService.logoutRequest(message);
+    }
+
+    @Test
+    public void changeDataPassword(){
+        // 将小明的password更改
+        ClientService clientService = new ClientService();
+        Message<String> message = new Message<>();
+        String passWord = "123456";
+        message.setMessage(passWord);
+        message.setSender("小明");
+        clientService.changeDataRequest(message);
     }
 
 
@@ -211,7 +222,7 @@ public class ClientTest {
         ClientService clientService = new ClientService();
         Message<Object> message = new Message<>();
         message.setSender("小明");
-        message.setReceiver("小强");
+        message.setReceiver("小红");
         message.setMessageType(FRIEND_INVITE);
         clientService.sendFriendInvite(message);
     }
@@ -221,7 +232,7 @@ public class ClientTest {
         ClientService clientService = new ClientService();
         Message<Boolean> message = new Message<>();
         message.setMessage(true);
-        message.setSender("小强");
+        message.setSender("小红");
         message.setReceiver("小明");
         clientService.ackFriendInvite(message);
     }
@@ -309,8 +320,8 @@ public class ClientTest {
     public void testJoinGroup(){
         ClientService clientService = new ClientService();
         Message<String> message = new Message<>();
-        message.setSender("小强");
-        message.setMessage("小明创建的群聊");
+        message.setSender("小红");
+        message.setMessage("幸福一家人");
         clientService.joinGroup(message);
     }
 
@@ -320,8 +331,17 @@ public class ClientTest {
         Message<String> message = new Message<>();
         message.setSender("小明");
         message.setMessage("今晚大家一起去吃饭吧");
-        message.setReceiver("小明创建的群聊");
+        message.setReceiver("幸福一家人");
         clientService.sendMessageToGroup(message);
+    }
+
+    @Test
+    public void getGroup(){
+        ClientService clientService = new ClientService();
+        Message<String> message = new Message<>();
+        message.setSender("小明");
+
+        clientService.getMyGroup(message);
     }
 
 

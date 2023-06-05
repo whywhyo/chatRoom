@@ -4,6 +4,7 @@ import com.chatRoom.constant.MessageType;
 import com.chatRoom.domain.ChatRoomUser;
 import com.chatRoom.domain.DB.DBMessage;
 import com.chatRoom.domain.DB.FriendDto;
+import com.chatRoom.domain.DB.GroupDto;
 import com.chatRoom.domain.Message;
 import com.chatRoom.exception.ChatRoomException;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import static com.chatRoom.constant.SystemConstant.SERVER_PORT;
  **/
 @Slf4j
 public class ClientService {
+
     /**
      * 登录请求
      */
@@ -138,47 +140,55 @@ public class ClientService {
     }
 
     /**
+     * 更改信息请求
+     */
+    public String changeDataRequest(Message<String> message) {
+        Message returnMessage = sendMessageToServer(message, CHANGE_USERDATA);
+        log.info((String) returnMessage.getMessage());
+        return (String) returnMessage.getMessage();
+    }
+
+    /**
      * 注册请求
      */
-    public void registerRequest(Message<ChatRoomUser> message) {
+    public String registerRequest(Message<ChatRoomUser> message) {
         Message returnMessage = sendMessageToServer(message, REGISTER);
         log.info((String) returnMessage.getMessage());
+        return (String) returnMessage.getMessage();
     }
 
     /**
      * 拉取好友列表请求
      */
-    public void getFriendList(Message message) {
-        Message<DBMessage> resultMessage = sendMessageToServer(message, GET_FRIEND);
+    public List<FriendDto> getFriendList(Message message) {
+        Message<List<FriendDto>> resultMessage = sendMessageToServer(message, GET_FRIEND);
 
         // 判断
-        DBMessage dbMessage = resultMessage.getMessage();
-        if (!dbMessage.isSuccess()) {
-            //如果用户本来就没有注册
-            String noRegister = (String) dbMessage.getContent();
-            log.info(noRegister);
-        } else {
-            //判断好友列表是否为空
-            List<FriendDto> friendList = (List<FriendDto>) dbMessage.getContent();
-            if (friendList.size() > 0) {
-                for (int i = 0; i < friendList.size(); i++) {
-                    //这里做一个输出操作，到时结合写界面再具体处理返回的数据吧
-                    System.out.println("第" + (i + 1) + "个好友为" + friendList.get(i));
-                }
-            } else {
-                System.out.println("您还没有添加好友");
-            }
+        List<FriendDto> friendList = resultMessage.getMessage();
+
+        if (!(friendList.size()>0)) {
+            //用户的好友列表为空
+            log.info("您还没有添加好友");
+        }else {
+            friendList.forEach(System.out::println);
         }
+
+        return friendList;
     }
 
     /**
      * 发起好友申请
      */
-    public void sendFriendInvite(Message message) {
+    public String sendFriendInvite(Message message) {
         Message returnMessage = sendMessageToServer(message, FRIEND_INVITE);
-        String result = (String) returnMessage.getMessage();
-        log.info(result);
+        Integer result = (Integer) returnMessage.getMessage();
+
         //到时页面这里可以加一列申请好友的信息列表，展示已同意或者不同意或者等待中
+        if(result == null){
+            return "该用户不存在";
+        }else{
+            return "成功发送请求";
+        }
     }
 
     /**
@@ -202,10 +212,10 @@ public class ClientService {
     /**
      * 得到我加入的群聊
      */
-    public void getMyGroup(Message<String> message){
+    public List<GroupDto> getMyGroup(Message<String> message){
         Message returnMessage = sendMessageToServer(message, GET_GROUP);
-        String result = (String) returnMessage.getMessage();
-        log.info(result);
+        List<GroupDto> result = (List<GroupDto>) returnMessage.getMessage();
+        return result;
     }
 
     /**

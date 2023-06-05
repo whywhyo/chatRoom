@@ -156,8 +156,15 @@ public class GroupMapper {
         }
 
         if (groupIdList.size()>0) {
+
+            ArrayList<GroupDto> groupList = new ArrayList<>();
             //如果用户有群聊
-            List<GroupDto> groupList = groupIdList.stream().map(this::getGroupById).collect(Collectors.toList());
+//            List<GroupDto> groupList = groupIdList.stream().map(this::getGroupById).collect(Collectors.toList());
+            for (Integer id : groupIdList) {
+                GroupDto group = getGroupById(id);
+                groupList.add(group);
+            }
+
             return new DBMessage<>(true, groupList);
         }else {
             //如果用户没有群聊
@@ -248,6 +255,7 @@ public class GroupMapper {
         try( PreparedStatement preparedStatement = connection.prepareStatement(sql);) {
             preparedStatement.setInt(1,groupId);
             ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
 
             //查到群主的名字
             int masterId = resultSet.getInt("master_id");
@@ -256,7 +264,7 @@ public class GroupMapper {
 
             return new GroupDto(resultSet.getString("name"), resultSet.getDate("create_time"), master.getUsername());
         } catch (SQLException e) {
-            throw new RuntimeException("数据库繁忙，请稍后重试");
+            throw new RuntimeException(e);
         }finally {
             try {
                 connection.close();

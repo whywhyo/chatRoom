@@ -5,6 +5,7 @@ import com.chatRoom.domain.ChatRoomUser;
 import com.chatRoom.domain.DB.DBMessage;
 import com.chatRoom.domain.DB.FriendDto;
 import com.chatRoom.domain.DB.GroupDto;
+import com.chatRoom.domain.Message;
 import com.chatRoom.utils.EncodeUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,14 +72,13 @@ public class UserMapper {
                 throw new RuntimeException(ex);
             }
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     /**
@@ -102,7 +102,7 @@ public class UserMapper {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {
@@ -134,7 +134,7 @@ public class UserMapper {
                 if (EncodeUtil.pattern(user.getPassword(), password)) {
                     log.info("登录成功");
                     //登录成功之后，将登录状态从0改成1
-                    updateStatus(user,1);
+                    updateStatus(user, 1);
                     return new DBMessage<>(true, "登陆成功");
                 } else {
                     log.info("登陆失败");
@@ -143,7 +143,7 @@ public class UserMapper {
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {
@@ -152,9 +152,9 @@ public class UserMapper {
         }
     }
 
-    public DBMessage<String> logout(ChatRoomUser user){
-        updateStatus(user,0);
-        return new DBMessage<>(true,"登出成功");
+    public DBMessage<String> logout(ChatRoomUser user) {
+        updateStatus(user, 0);
+        return new DBMessage<>(true, "登出成功");
     }
 
 
@@ -172,26 +172,55 @@ public class UserMapper {
 
         String updateSql = "update user set status = ? where username = ?";
 
-        try(PreparedStatement preparedStatement = connection.prepareStatement(updateSql);) {
-            preparedStatement.setInt(1,status);
-            preparedStatement.setString(2,user.getUsername());
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateSql);) {
+            preparedStatement.setInt(1, status);
+            preparedStatement.setString(2, user.getUsername());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
 
+    /**
+     * 修改用户的个人信息 更改 1 密码 或者更改 2 邮箱
+     */
+    public void updateUserData(String userName, Message<String> changeData) {
+        Connection connection = null;
+        try {
+            connection = DruidConfig.getConnection();
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new RuntimeException("系统繁忙，请稍后重试");
+        }
+        String updateSql = null;
+        updateSql = "update user set password= ? where username = ?";
+
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(updateSql);) {
+            preparedStatement.setString(1,  EncodeUtil.encrypt(changeData.getMessage()));
+            preparedStatement.setString(2, userName);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
      * 通过名字得到Id
      */
-    public Integer getIdByNameFromUser(String name){
+    public Integer getIdByNameFromUser(String name) {
         Connection connection = null;
         try {
             connection = DruidConfig.getConnection();
@@ -201,17 +230,17 @@ public class UserMapper {
         }
 
         String selectIdSql = "select id from user where username = ?";
-        try( PreparedStatement preparedStatement = connection.prepareStatement(selectIdSql);) {
-            preparedStatement.setString(1,name);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(selectIdSql);) {
+            preparedStatement.setString(1, name);
             ResultSet resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()){
+            if (resultSet.next()) {
                 return resultSet.getInt("id");
-            }else {
+            } else {
                 return null;
             }
         } catch (SQLException e) {
             throw new RuntimeException("数据库繁忙，请稍后重试");
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {
@@ -223,7 +252,7 @@ public class UserMapper {
     /**
      * 通过id得到用户对象
      */
-    public ChatRoomUser getUserById(Integer userId){
+    public ChatRoomUser getUserById(Integer userId) {
         Connection connection = null;
         try {
             connection = DruidConfig.getConnection();
@@ -234,8 +263,8 @@ public class UserMapper {
 
         String sql = "select * from user where id = ?";
 
-        try( PreparedStatement preparedStatement = connection.prepareStatement(sql);) {
-            preparedStatement.setInt(1,userId);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);) {
+            preparedStatement.setInt(1, userId);
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
             ChatRoomUser user = new ChatRoomUser();
@@ -246,7 +275,7 @@ public class UserMapper {
         } catch (SQLException e) {
             log.debug(e.getMessage());
             throw new RuntimeException("数据库繁忙，请稍后重试");
-        }finally {
+        } finally {
             try {
                 connection.close();
             } catch (SQLException e) {

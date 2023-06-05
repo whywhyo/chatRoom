@@ -74,9 +74,11 @@ public class ServerService {
 
         private Socket clientSocket;
 
+
         public ClientHandler(Socket clientSocket) {
             this.clientSocket = clientSocket;
         }
+
 
         /**
          * 服务端线程执行客户端的要求方法
@@ -148,7 +150,21 @@ public class ServerService {
                 //如果是请求发送验证码到邮箱中
                 log.info("服务器处理请求发送验证码的请求");
                 getVerifyCode(message);
+            }else if (messageType == CHANGE_USERDATA){
+                //如果是请求更改信息
+                log.info("服务器处理请求发送验证码的请求");
+                changeUserData(message);
+
             }
+        }
+        private void changeUserData(Message<String> message){
+            // 获取需要更改的内容 密码/邮箱 用户名(1 密码 或者更改 2 邮箱)
+            String sender = message.getSender();
+            String receiver = message.getReceiver();
+            UserMapper userMapper = new UserMapper();
+
+            userMapper.updateUserData(sender,message);
+            log.info("服务器接收到客户端要求更改信息的请求");
         }
 
         private void getVerifyCode(Message<String> message) {
@@ -176,7 +192,7 @@ public class ServerService {
             GroupMapper groupMapper = new GroupMapper();
             DBMessage<List<ChatRoomUser>> dbMessage = groupMapper.getUserByGroupName(groupName);
             List<ChatRoomUser> allUserList = dbMessage.getContent();
-            List<ChatRoomUser> onlineUserList = allUserList.stream().filter(user -> user.getStatus() == 1).collect(Collectors.toList());
+            List<ChatRoomUser> onlineUserList = allUserList.stream().filter(user -> user.getStatus() == 1 && !(user.getUsername().equals(sender))).collect(Collectors.toList());
 
             //通过这些用户的监听socket发信息
             for (ChatRoomUser user : onlineUserList) {
@@ -242,7 +258,6 @@ public class ServerService {
 
         }
 
-
         private void deleteFriend(Message message) {
             String sender = message.getSender();
             String receiver = message.getReceiver();
@@ -256,6 +271,15 @@ public class ServerService {
             returnMessage.setMessage((String) dbMessage.getContent());
 
             sendMessageMethod(clientSocket,returnMessage);
+
+            //发信息通知被删的一方
+            Message<String> deletedMessage = new Message<>();
+            deletedMessage.setMessageType(IS_DELETE);
+            deletedMessage.setMessage("你被"+sender+"删了");
+            Socket deletedSocket = clientsCollection.get(receiver+LISTEN_SUFFIX);
+            sendMessageMethod(deletedSocket,deletedMessage);
+            log.info("服务器已将删除数据全部发出");
+
         }
 
         private void ackFriendInvite(Message<Boolean> message) {
@@ -294,9 +318,13 @@ public class ServerService {
             Socket receiverSocket = clientsCollection.get(receiver + LISTEN_SUFFIX);
             sendMessageMethod(receiverSocket, message);
 
+            UserMapper userMapper = new UserMapper();
+            Integer result = userMapper.getIdByNameFromUser(receiver);
+
+
             //给发起邀请的客户一个回复
-            Message<String> returnMessage = new Message<>();
-            returnMessage.setMessage("加好友请求已成功发出，等待对方应答");
+            Message<Integer> returnMessage = new Message<>();
+            returnMessage.setMessage(result);
             sendMessageMethod(clientSocket, returnMessage);
         }
 
@@ -375,12 +403,15 @@ public class ServerService {
             } else {
                 //先从集合中拿到接收方socket
                 Socket receiverSocket = clientsCollection.get(message.getReceiver() + LISTEN_SUFFIX);
+                System.out.println("拿到的socket为："+receiverSocket);
+                System.out.println("socket是否已关闭："+receiverSocket.isClosed());
 
                 //开始发信息
                 ObjectOutputStream receiverOutputStream = null;
                 try {
                     receiverOutputStream = new ObjectOutputStream(receiverSocket.getOutputStream());
                     receiverOutputStream.writeObject(message);
+                    receiverOutputStream.flush();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -440,7 +471,7 @@ public class ServerService {
          * @param clientSocket 自己的客户端socket
          * @param message      信息对象
          */
-        private void loginHandler(Socket clientSocket, Message<ChatRoomUser> message) {
+        private void loginHandler( Socket clientSocket, Message<ChatRoomUser> message) {
             ChatRoomUser userInfo = message.getMessage();
 
             //先检验是否为空
@@ -475,11 +506,12 @@ public class ServerService {
                     clientsCollection.put(userInfo.getUsername() + ":listen", clientSocket);
                 }
             }
+            log.info("登陆结果准备发送给客户端");
             //发送登录结果给客户端
             sendMessageMethod(clientSocket, loginResult);
+            log.info("登陆结果已经发送给客户端");
 
         }
-
 
         /**
          * 发信息封装的方法
@@ -496,13 +528,6 @@ public class ServerService {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
-//        try {
-//            receiverOutputStream.close();
-//            socket.shutdownOutput();
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
         }
 
         private void checkUser(ChatRoomUser user) {

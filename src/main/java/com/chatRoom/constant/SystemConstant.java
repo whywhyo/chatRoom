@@ -8,5 +8,5 @@ package com.chatRoom.constant;
  **/
 public class SystemConstant {
     public static final String SERVER_HOST = "localhost";
-    public static final int SERVER_PORT = 5000;
+    public static final int SERVER_PORT = 5001;
 }

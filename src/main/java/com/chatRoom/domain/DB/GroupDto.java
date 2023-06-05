@@ -2,6 +2,7 @@ package com.chatRoom.domain.DB;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -11,7 +12,10 @@ import java.util.Date;
  * @Version 1.0.0
  **/
 @Data
-public class GroupDto {
+public class GroupDto implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+
     private String name;
     private Date create_time;
     private String creator;
