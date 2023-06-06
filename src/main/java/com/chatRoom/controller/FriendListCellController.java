@@ -2,6 +2,7 @@ package com.chatRoom.controller;
 
 import com.chatRoom.domain.Message;
 import com.chatRoom.service.client.ClientService;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -46,7 +47,26 @@ public class FriendListCellController extends ListCell<FriendData> {
         }
 
         chatButton.setOnAction(event -> {
-            log.info("stateLabel.getText()"+stateLabel.getText());
+
+            chatButton.setStyle("-fx-background-color:  #40b087;"); // 绿色
+
+            // 在500毫秒后将按钮颜色恢复为红色
+            new Thread(() -> {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                // 使用Platform.runLater来改变UI组件
+                Platform.runLater(() -> {
+                    if(stateLabel.getText().equals("群聊")){
+                        chatButton.setStyle("-fx-background-color: #e594d7;");
+                    }else{
+                        chatButton.setStyle("-fx-background-color: #0095B6;");
+                    }
+                }); // 红色
+            }).start();
+
             if(stateLabel.getText().equals("群聊")){
                 chatController.switchToMessageList(friendUsername,"群聊");
                 System.out.println("群聊聊天界面");

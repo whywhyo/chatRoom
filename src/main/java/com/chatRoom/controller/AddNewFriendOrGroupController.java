@@ -85,6 +85,8 @@ public class AddNewFriendOrGroupController {
                 if(result.equals("成功发送请求")){
                     findButton.setDisable(true);
                     findButton.setStyle("-fx-background-color: #CCCCCC;");
+                }else if (result.equals("用户没上线")){
+                    tipLabel.setText("请求失败，用户没上线");
                 }
             } else if (choseAddModeComboBox.getValue().equals("添加群聊")) {
                 ClientService clientService = new ClientService();

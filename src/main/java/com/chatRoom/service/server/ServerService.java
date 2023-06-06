@@ -152,7 +152,7 @@ public class ServerService {
                 getVerifyCode(message);
             }else if (messageType == CHANGE_USERDATA){
                 //如果是请求更改信息
-                log.info("服务器处理请求发送验证码的请求");
+                log.info("服务器处理更改信息的请求");
                 changeUserData(message);
 
             }
@@ -165,6 +165,10 @@ public class ServerService {
 
             userMapper.updateUserData(sender,message);
             log.info("服务器接收到客户端要求更改信息的请求");
+
+            Message<String> returnMessage = new Message<>();
+            returnMessage.setMessage("成功将请求发送给服务端");
+            sendMessageMethod(clientSocket,returnMessage);
         }
 
         private void getVerifyCode(Message<String> message) {
@@ -314,18 +318,26 @@ public class ServerService {
             String sender = message.getSender();
             String receiver = message.getReceiver();
 
-            //从集合中找到接收者线程
-            Socket receiverSocket = clientsCollection.get(receiver + LISTEN_SUFFIX);
-            sendMessageMethod(receiverSocket, message);
+            if (clientsCollection.containsKey(receiver+LISTEN_SUFFIX)) {
+                //从集合中找到接收者线程
+                Socket receiverSocket = clientsCollection.get(receiver + LISTEN_SUFFIX);
+                sendMessageMethod(receiverSocket, message);
 
-            UserMapper userMapper = new UserMapper();
-            Integer result = userMapper.getIdByNameFromUser(receiver);
+                UserMapper userMapper = new UserMapper();
+                Integer result = userMapper.getIdByNameFromUser(receiver);
 
 
-            //给发起邀请的客户一个回复
-            Message<Integer> returnMessage = new Message<>();
-            returnMessage.setMessage(result);
-            sendMessageMethod(clientSocket, returnMessage);
+                //给发起邀请的客户一个回复
+                Message<Integer> returnMessage = new Message<>();
+                returnMessage.setMessage(result);
+                sendMessageMethod(clientSocket, returnMessage);
+            }else{
+                Message<Integer> returnMessage = new Message<>();
+                returnMessage.setMessage(500);
+                sendMessageMethod(clientSocket, returnMessage);
+            }
+
+
         }
 
 

@@ -226,7 +226,7 @@ public class UserMapper {
             connection = DruidConfig.getConnection();
         } catch (SQLException e) {
             log.debug(e.getMessage());
-            throw new RuntimeException("系统繁忙，请稍后重试");
+//            throw new RuntimeException("系统繁忙，请稍后重试");
         }
 
         String selectIdSql = "select id from user where username = ?";
@@ -239,7 +239,9 @@ public class UserMapper {
                 return null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("数据库繁忙，请稍后重试");
+            log.error(e.getMessage());
+            return null;
+//            throw new RuntimeException("数据库繁忙，请稍后重试");
         } finally {
             try {
                 connection.close();

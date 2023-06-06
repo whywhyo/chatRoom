@@ -93,6 +93,7 @@ public class RegisterController {
             emailTextField.setEditable(false);
             confirmMailTextField.setEditable(false);
             registerButton.setDisable(true);
+            sendConfirmCodeButton.setDisable(true);
         }else if(tip.equals("用户已存在")){
             userNameFalseLabel.setVisible(true);
             successTipLabel.setText("注册失败，用户已存在");
@@ -131,10 +132,11 @@ public class RegisterController {
         message.setMessage(emailTextField.getText());
 
         clientService.getVerifyCode(message);
-
-        sendConfirmCodeButton.setDisable(true);
+        new Thread(()-> {
+            sendConfirmCodeButton.setDisable(true);
+        }).start();
         new Thread(()->{
-            int time = 10;
+            int time = 20;
             while(time-->0){
                 try {
                     Thread.sleep(1000);

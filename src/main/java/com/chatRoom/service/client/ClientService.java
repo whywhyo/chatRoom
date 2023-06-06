@@ -186,7 +186,10 @@ public class ClientService {
         //到时页面这里可以加一列申请好友的信息列表，展示已同意或者不同意或者等待中
         if(result == null){
             return "该用户不存在";
-        }else{
+        }else if(result == 500){
+            return "用户没上线";
+        }
+        else{
             return "成功发送请求";
         }
     }

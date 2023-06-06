@@ -164,7 +164,8 @@ public class FriendMapper {
                 //有任何异常，回滚事务
                 connection.rollback();
             } catch (SQLException ex) {
-                throw new RuntimeException("数据库繁忙，请稍后重试");
+                log.error("数据库繁忙，请稍后重试");
+//                throw new RuntimeException("数据库繁忙，请稍后重试");
             }
             return new DBMessage<>(false, "不能重复添加好友");
         }finally {
