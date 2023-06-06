@@ -86,14 +86,15 @@ public class AddNewFriendOrGroupController {
                     findButton.setDisable(true);
                     findButton.setStyle("-fx-background-color: #CCCCCC;");
                 }else if (result.equals("用户没上线")){
-                    tipLabel.setText("请求失败，用户没上线");
+                    tipLabel.setText("请求失败，用户未上线");
                 }
             } else if (choseAddModeComboBox.getValue().equals("添加群聊")) {
                 ClientService clientService = new ClientService();
                 Message<String> message = new Message<>();
                 message.setSender(chatController.getUsername());
                 message.setMessage(checkNameTextField.getText());
-                clientService.joinGroup(message);
+                String result = clientService.joinGroup(message);
+                tipLabel.setText(result);
 
                 chatController.renewFriendList();
                 findButton.setDisable(true);
@@ -109,7 +110,14 @@ public class AddNewFriendOrGroupController {
                 message.setSender(chatController.getUsername());
                 message.setMessage(checkNameTextField.getText());
                 clientService.createGroup(message);
+
                 chatController.renewFriendList();
+                findButton.setDisable(true);
+                findButton.setStyle("-fx-background-color: #CCCCCC;");
+
+                // message要新建一席之地
+                ObservableList<MessageData> messageDataList = FXCollections.observableArrayList();
+                chatController.userMessageMap.put(checkNameTextField.getText(), messageDataList);
             }
         }
     }

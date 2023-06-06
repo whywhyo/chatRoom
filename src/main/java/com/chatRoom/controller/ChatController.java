@@ -197,6 +197,9 @@ public class ChatController {
                     log.info(messageContent);
                     renewFriendList();
                 }
+                else if(readMessage.getMessageType() == FRIEND_ONLINE){
+                    renewFriendList();
+                }
                 else {
                     log.error("本线程接收到未知类型的对象");
                     throw new ChatRoomException("系统出现未知错误，请联系管理员");

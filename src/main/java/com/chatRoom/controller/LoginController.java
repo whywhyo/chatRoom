@@ -85,7 +85,7 @@ public class LoginController {
                     //登陆失败,在界面显示登录失败
                     log.info(loginResultMessage.getMessage().getContent());
                     Platform.runLater(() -> {
-                        loginMessageLabel.setText("登陆失败，请检查您的账号或密码。");
+                        loginMessageLabel.setText("登陆失败，请检查账号密码");
                     });
                 } else {
                     log.info(loginResultMessage.getMessage().getContent());

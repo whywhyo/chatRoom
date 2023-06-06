@@ -233,10 +233,11 @@ public class ClientService {
     /**
      * 加入群聊
      */
-    public void joinGroup(Message message){
+    public String joinGroup(Message message){
         Message returnMessage = sendMessageToServer(message, JOIN_GROUP);
         String result = (String) returnMessage.getMessage();
         log.info(result);
+        return result;
     }
 
     /**
@@ -289,6 +290,13 @@ public class ClientService {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public String deleteGroup(Message message){
+        Message returnMessage = sendMessageToServer(message,DELETE_GROUP);
+        String result = (String) returnMessage.getMessage();
+        log.info(result);
+        return result;
     }
 
 }
