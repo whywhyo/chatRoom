@@ -2,10 +2,10 @@ package com.chatRoom.controller;
 
 import com.chatRoom.domain.Message;
 import com.chatRoom.service.client.ClientService;
-import javafx.beans.property.SimpleStringProperty;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -54,9 +54,7 @@ public class AddNewFriendOrGroupController {
             }
         });
 
-        findButton.setOnAction(event -> {
-            findButtonOnAction();
-        });
+        findButton.setOnAction(event -> findButtonOnAction());
 
         exitButton.setOnAction(event -> {
             Stage stage = (Stage) exitButton.getScene().getWindow();
