@@ -9,12 +9,13 @@ import com.chatRoom.domain.Message;
 import com.chatRoom.exception.ChatRoomException;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Random;
 
 import static com.chatRoom.constant.MessageType.*;
 import static com.chatRoom.constant.SystemConstant.SERVER_HOST;
@@ -86,10 +87,23 @@ public class ClientService {
                     }
 
                     if (readMessage.getMessageType() == MESSAGE_SEND) {
-
-                        String messageContent = (String) readMessage.getMessage();
                         String sender = readMessage.getSender();
-                        log.info("收到来自{}的信息:{}", sender, messageContent);
+                        Object messageContent = readMessage.getMessage();
+                        if (messageContent instanceof String){
+                            String returnMessage = (String) messageContent;
+                            log.info("收到来自{}的信息:{}", sender, messageContent);
+                        }
+
+                        if (messageContent instanceof byte[]){
+                            byte[] fileBytes = (byte[]) messageContent;
+                            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(fileBytes);
+                            BufferedImage bufferedImage = ImageIO.read(byteArrayInputStream);
+
+                            String savePath = "F:\\chatImg\\image"+new Random().nextInt(100) +".png";
+                            // 将 Buffered Image 对象保存到本地文件中
+                            ImageIO.write(bufferedImage, "PNG", new File(savePath));
+                            log.info("收到来自{}的文件资源，保存到了{}", sender,savePath);
+                        }
 
                         // TODO: 2023-06-02 收到信息后把记录存到本地
                     } else if (readMessage.getMessageType() == FRIEND_INVITE) {
@@ -122,9 +136,56 @@ public class ClientService {
     }
 
     /**
-     * 发送信息的请求
+     * 发送多媒体资源
+     */
+    public void sendMultiMedia(Message<String> message) throws IOException {
+
+        String path = message.getMessage();
+        File file = new File(path);
+        byte[] fileBytes = new byte[(int) file.length()];
+
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
+        bufferedInputStream.read(fileBytes, 0, fileBytes.length);
+
+        bufferedInputStream.close();
+
+        Message<byte[]> sendMessage = new Message<>();
+        sendMessage.setSender(message.getSender());
+        sendMessage.setReceiver(message.getReceiver());
+        sendMessage.setMessage(fileBytes);
+
+        sendMessageToServer(sendMessage,MESSAGE_SEND);
+
+    }
+
+    /**
+     * 群聊发送多媒体资源
      */
 
+    public void sendMultiMediaToGroup(Message<String> message) throws IOException{
+        String path = message.getMessage();
+        File file = new File(path);
+        byte[] fileBytes = new byte[(int) file.length()];
+
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(Files.newInputStream(file.toPath()));
+        bufferedInputStream.read(fileBytes, 0, fileBytes.length);
+
+        bufferedInputStream.close();
+
+        Message<byte[]> sendMessage = new Message<>();
+        sendMessage.setSender(message.getSender());
+        sendMessage.setReceiver(message.getReceiver());
+        sendMessage.setMessage(fileBytes);
+
+        sendMessageToServer(sendMessage,GROUP_CHAT);
+    }
+
+
+
+
+    /**
+     * 发送信息的请求
+     */
     public void sendMessage(Message message) {
         sendMessageToServer(message, MESSAGE_SEND);
         // TODO: 2023-06-02 发完信息之后需要将记录存到本地

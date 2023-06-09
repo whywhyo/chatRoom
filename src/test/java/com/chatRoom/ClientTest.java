@@ -14,6 +14,7 @@ import com.chatRoom.service.server.ServerService;
 import com.chatRoom.utils.EncodeUtil;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -46,6 +47,17 @@ public class ClientTest {
     }
 
     @Test
+    public void sendMultiMedia() throws IOException {
+        Message<String> message = new Message<>();
+        message.setMessage("F:\\picture\\picture1.png");
+        message.setSender("小红");
+        message.setReceiver("小强");
+        ClientService clientService = new ClientService();
+        clientService.sendMultiMedia(message);
+    }
+
+
+    @Test
     public void client1() {
         ClientService clientService = new ClientService();
         ChatRoomUser user = new ChatRoomUser("小明", "123456");
@@ -59,7 +71,6 @@ public class ClientTest {
     public void client2() {
         ClientService clientService = new ClientService();
         ChatRoomUser user = new ChatRoomUser("小红", "123456");
-
         Message<ChatRoomUser> message = new Message<>();
         message.setSender("小红");
         message.setMessage(user);

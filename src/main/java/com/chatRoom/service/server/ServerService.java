@@ -359,7 +359,6 @@ public class ServerService {
 
         }
 
-
         /**
          * 获取好友列表请求方法
          */
@@ -426,7 +425,7 @@ public class ServerService {
          *
          * @param message 信息对象
          */
-        private void sendMessageToOther(Message<String> message) {
+        private void sendMessageToOther(Message message) {
 
             boolean isOnline = clientsCollection.containsKey(message.getReceiver() + LISTEN_SUFFIX);
             if (!isOnline) {
@@ -440,6 +439,7 @@ public class ServerService {
                 Socket receiverSocket = clientsCollection.get(message.getReceiver() + LISTEN_SUFFIX);
                 System.out.println("拿到的socket为：" + receiverSocket);
                 System.out.println("socket是否已关闭：" + receiverSocket.isClosed());
+
 
                 //开始发信息
                 ObjectOutputStream receiverOutputStream = null;
