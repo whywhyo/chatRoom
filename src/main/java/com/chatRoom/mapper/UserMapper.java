@@ -157,7 +157,6 @@ public class UserMapper {
         return new DBMessage<>(true, "登出成功");
     }
 
-
     /**
      * 修改用户的登录状态
      */

@@ -78,12 +78,21 @@ public class FriendListCellController extends ListCell<FriendData> {
         });
 
         deleteFriendButton.setOnAction(event -> {
-            ClientService clientService = new ClientService();
-            Message<Boolean> message = new Message<>();
-            message.setSender(chatController.getUsername());
-            message.setReceiver(chatButton.getText());
-            clientService.deleteFriend(message);
-            chatController.renewFriendList();
+            if(deleteFriendButton.getText().equals("删除好友")){
+                ClientService clientService = new ClientService();
+                Message<Boolean> message = new Message<>();
+                message.setSender(chatController.getUsername());
+                message.setReceiver(chatButton.getText());
+                clientService.deleteFriend(message);
+                chatController.renewFriendList();
+            }else if(deleteFriendButton.getText().equals("删除群聊")){
+                ClientService clientService = new ClientService();
+                Message<String> message = new Message<>();
+                message.setSender(chatController.getUsername());
+                message.setMessage(chatButton.getText());
+                clientService.deleteGroup(message);
+                chatController.renewFriendList();
+            }
         });
     }
 

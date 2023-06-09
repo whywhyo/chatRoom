@@ -43,6 +43,6 @@
             <Font size="15.0" />
          </font>
       </Label>
-      <TextField fx:id="confirmTextField" layoutX="259.0" layoutY="324.0" prefHeight="23.0" prefWidth="79.0" promptText="验证码" />
+      <TextField fx:id="confirmTextField" layoutX="259.0" layoutY="323.0" prefHeight="23.0" prefWidth="79.0" promptText="验证码" visible="false" />
    </children>
 </AnchorPane>

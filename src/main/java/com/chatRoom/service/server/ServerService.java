@@ -126,49 +126,68 @@ public class ServerService {
                 //如果是应答好友邀请请求的请求
                 log.info("服务器处理应答好友邀请请求的请求");
                 ackFriendInvite(message);
-            } else if(messageType == DELETE_FRIEND){
+            } else if (messageType == DELETE_FRIEND) {
                 //如果是请求删除好友的请求
                 log.info("服务器处理删除好友的请求");
                 deleteFriend(message);
-            }else if(messageType == CREATE_GROUP){
+            } else if (messageType == CREATE_GROUP) {
                 //如果是新建群聊的请求
                 log.info("服务器处理新建群聊的请求");
                 createGroup(message);
-            }else if (messageType == JOIN_GROUP){
+            } else if (messageType == JOIN_GROUP) {
                 //如果是加入群聊的请求
                 log.info("服务器处理加入群聊的请求");
                 joinGroup(message);
-            }else if (messageType == GET_GROUP){
+            } else if (messageType == GET_GROUP) {
                 //如果是请求获取群聊列表的请求
                 log.info("服务器处理请求获取群聊列表的请求");
                 getGroup(message);
-            }else if (messageType == GROUP_CHAT){
+            } else if (messageType == GROUP_CHAT) {
                 //如果是群聊发信息请求
                 log.info("服务器处理群聊发信息的请求");
                 sendMessageToGroup(message);
-            }else if (messageType == GET_CODE){
+            } else if (messageType == GET_CODE) {
                 //如果是请求发送验证码到邮箱中
                 log.info("服务器处理请求发送验证码的请求");
                 getVerifyCode(message);
-            }else if (messageType == CHANGE_USERDATA){
+            } else if (messageType == CHANGE_USERDATA) {
                 //如果是请求更改信息
                 log.info("服务器处理更改信息的请求");
                 changeUserData(message);
 
+            } else if (messageType == DELETE_GROUP) {
+                //如果是请求删除群聊
+                log.info("服务器处理删除群聊的请求");
+                deleteGroup(message);
             }
         }
-        private void changeUserData(Message<String> message){
+
+        private void deleteGroup(Message<String> message){
+            String sender = message.getSender();
+            String groupName = message.getMessage();
+
+
+           GroupMapper groupMapper = new GroupMapper();
+
+            groupMapper.deleteGroup(sender, groupName);
+            log.info("服务器接收到客户端要求删除群聊的请求");
+
+            Message<String> returnMessage = new Message<>();
+            returnMessage.setMessage("成功删除群聊");
+            sendMessageMethod(clientSocket, returnMessage);
+        }
+
+        private void changeUserData(Message<String> message) {
             // 获取需要更改的内容 密码/邮箱 用户名(1 密码 或者更改 2 邮箱)
             String sender = message.getSender();
-            String receiver = message.getReceiver();
             UserMapper userMapper = new UserMapper();
 
-            userMapper.updateUserData(sender,message);
+            userMapper.updateUserData(sender, message);
             log.info("服务器接收到客户端要求更改信息的请求");
 
             Message<String> returnMessage = new Message<>();
             returnMessage.setMessage("成功将请求发送给服务端");
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
         }
 
         private void getVerifyCode(Message<String> message) {
@@ -180,15 +199,15 @@ public class ServerService {
 
             //将验证码信息保存到数据库，方便验证
             VerifyCodeMapper verifyCodeMapper = new VerifyCodeMapper();
-            verifyCodeMapper.saveInfo(username,code);
+            verifyCodeMapper.saveInfo(username, code);
 
             //封装发送验证码成功的信息
             Message<String> returnMessage = new Message<>();
             returnMessage.setMessage("发送验证码成功");
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
         }
 
-        private void sendMessageToGroup(Message<String> message){
+        private void sendMessageToGroup(Message<String> message) {
             String sender = message.getSender();
             String groupName = message.getReceiver();
 
@@ -200,18 +219,18 @@ public class ServerService {
 
             //通过这些用户的监听socket发信息
             for (ChatRoomUser user : onlineUserList) {
-                Socket receiverSocket = clientsCollection.get(user.getUsername()+LISTEN_SUFFIX);
-                sendMessageMethod(receiverSocket,message);
+                Socket receiverSocket = clientsCollection.get(user.getUsername() + LISTEN_SUFFIX);
+                sendMessageMethod(receiverSocket, message);
             }
 
             //返回结果反馈给发送方
             Message<String> returnMessage = new Message<>();
             returnMessage.setMessage("发送群聊信息成功");
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
 
         }
 
-        private void getGroup(Message<String> message){
+        private void getGroup(Message<String> message) {
             String sender = message.getSender();
             GroupMapper groupMapper = new GroupMapper();
             DBMessage<List<GroupDto>> groupListByName = groupMapper.getGroupListByName(sender);
@@ -220,7 +239,7 @@ public class ServerService {
             //返回给客户端
             Message<List<GroupDto>> returnMessage = new Message<>();
             returnMessage.setMessage(groupListByName.getContent());
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
         }
 
         private void joinGroup(Message<String> message) {
@@ -237,10 +256,10 @@ public class ServerService {
             returnMessage.setMessage(dbMessage.getContent());
 
             //返回给客户端
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
         }
 
-        private void createGroup(Message<String> message){
+        private void createGroup(Message<String> message) {
 
             //得到群聊发起者
             String creator = message.getSender();
@@ -251,14 +270,14 @@ public class ServerService {
             DBMessage<String> dbMessage = groupMapper.createGroup(creator, groupName);
 
             //创建群聊之后要把自己加入到用户群聊关系表中
-            groupMapper.joinGroup(creator,groupName);
+            groupMapper.joinGroup(creator, groupName);
 
             //封装返回给客户端的信息
             Message<String> returnMessage = new Message<>();
             returnMessage.setMessage(dbMessage.getContent());
 
             //返回给客户端
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
 
         }
 
@@ -274,21 +293,21 @@ public class ServerService {
             Message<String> returnMessage = new Message<>();
             returnMessage.setMessage((String) dbMessage.getContent());
 
-            sendMessageMethod(clientSocket,returnMessage);
+            sendMessageMethod(clientSocket, returnMessage);
 
             //发信息通知被删的一方
             Message<String> deletedMessage = new Message<>();
             deletedMessage.setMessageType(IS_DELETE);
-            deletedMessage.setMessage("你被"+sender+"删了");
-            Socket deletedSocket = clientsCollection.get(receiver+LISTEN_SUFFIX);
-            sendMessageMethod(deletedSocket,deletedMessage);
+            deletedMessage.setMessage("你被" + sender + "删了");
+            Socket deletedSocket = clientsCollection.get(receiver + LISTEN_SUFFIX);
+            sendMessageMethod(deletedSocket, deletedMessage);
             log.info("服务器已将删除数据全部发出");
 
         }
 
         private void ackFriendInvite(Message<Boolean> message) {
             //得到接收结果方的线程
-            Socket receiverSocket = clientsCollection.get(message.getReceiver()+LISTEN_SUFFIX);
+            Socket receiverSocket = clientsCollection.get(message.getReceiver() + LISTEN_SUFFIX);
 
             Message<String> returnMessage = new Message<>();//返回给应答方的数据
 
@@ -318,7 +337,7 @@ public class ServerService {
             String sender = message.getSender();
             String receiver = message.getReceiver();
 
-            if (clientsCollection.containsKey(receiver+LISTEN_SUFFIX)) {
+            if (clientsCollection.containsKey(receiver + LISTEN_SUFFIX)) {
                 //从集合中找到接收者线程
                 Socket receiverSocket = clientsCollection.get(receiver + LISTEN_SUFFIX);
                 sendMessageMethod(receiverSocket, message);
@@ -331,7 +350,7 @@ public class ServerService {
                 Message<Integer> returnMessage = new Message<>();
                 returnMessage.setMessage(result);
                 sendMessageMethod(clientSocket, returnMessage);
-            }else{
+            } else {
                 Message<Integer> returnMessage = new Message<>();
                 returnMessage.setMessage(500);
                 sendMessageMethod(clientSocket, returnMessage);
@@ -394,6 +413,10 @@ public class ServerService {
                 returnMessage.setMessageType(SERVER_RESULT);
                 returnMessage.setMessage("登出成功");
                 sendMessageMethod(clientSocket, returnMessage);
+
+
+                sendOnlineStatusMessageToFriend(user);
+
             }
         }
 
@@ -415,8 +438,8 @@ public class ServerService {
             } else {
                 //先从集合中拿到接收方socket
                 Socket receiverSocket = clientsCollection.get(message.getReceiver() + LISTEN_SUFFIX);
-                System.out.println("拿到的socket为："+receiverSocket);
-                System.out.println("socket是否已关闭："+receiverSocket.isClosed());
+                System.out.println("拿到的socket为：" + receiverSocket);
+                System.out.println("socket是否已关闭：" + receiverSocket.isClosed());
 
                 //开始发信息
                 ObjectOutputStream receiverOutputStream = null;
@@ -454,18 +477,18 @@ public class ServerService {
             resultMessage.setMessageType(SERVER_RESULT);
 //            resultMessage.setMessage(dbMessage.getContent());
 
-            if(StringUtils.isNullOrEmpty(userInfo.getCode())){
+            if (StringUtils.isNullOrEmpty(userInfo.getCode())) {
                 resultMessage.setMessage("请先获取验证码并输入");
-            }else {
+            } else {
 
                 //先从数据库中读取验证码
                 VerifyCodeMapper verifyCodeMapper = new VerifyCodeMapper();
                 String realCode = verifyCodeMapper.getRealCode(userInfo.getUsername());
 
-                if (StringUtils.isNullOrEmpty(realCode) || !(realCode.equals(userInfo.getCode()))){
+                if (StringUtils.isNullOrEmpty(realCode) || !(realCode.equals(userInfo.getCode()))) {
                     //如果数据库中没有存放对应的数据，或者验证码不匹配，那就返回信息要求用户重新获取验证码
                     resultMessage.setMessage("验证码校验不通过");
-                }else {
+                } else {
                     //操作数据库新增用户信息
                     UserMapper userMapper = new UserMapper();
                     DBMessage<String> dbMessage = userMapper.register(userInfo);
@@ -483,7 +506,7 @@ public class ServerService {
          * @param clientSocket 自己的客户端socket
          * @param message      信息对象
          */
-        private void loginHandler( Socket clientSocket, Message<ChatRoomUser> message) {
+        private void loginHandler(Socket clientSocket, Message<ChatRoomUser> message) {
             ChatRoomUser userInfo = message.getMessage();
 
             //先检验是否为空
@@ -523,6 +546,27 @@ public class ServerService {
             sendMessageMethod(clientSocket, loginResult);
             log.info("登陆结果已经发送给客户端");
 
+            sendOnlineStatusMessageToFriend(userInfo);
+
+
+        }
+
+        private void sendOnlineStatusMessageToFriend(ChatRoomUser userInfo) {
+            //登录完之后要发信息通知ta的好友说我已经上线了
+
+            FriendMapper friendMapper = new FriendMapper();
+            DBMessage<List<FriendDto>> friendListByUsername = friendMapper.getFriendListByUsername(userInfo.getUsername());
+            List<FriendDto> friendList = friendListByUsername.getContent();
+
+            List<String> onlineFriendList = friendList.stream().filter(friendDto -> friendDto.getFlag() == 1).map(FriendDto::getUsername).collect(Collectors.toList());
+            onlineFriendList.forEach((friend) -> {
+                Socket friendSocket = clientsCollection.get(friend + LISTEN_SUFFIX);
+
+                Message<String> stringMessage = new Message<>();
+                stringMessage.setMessageType(FRIEND_ONLINE);
+
+                sendMessageMethod(friendSocket, stringMessage);
+            });
         }
 
         /**

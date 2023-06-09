@@ -23,6 +23,51 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GroupMapper {
 
+    public DBMessage<String> deleteGroup(String username,String groupName){
+        UserMapper userMapper = new UserMapper();
+        Integer userId = userMapper.getIdByNameFromUser(username);
+        Integer groupId = getIdByNameFromGroup(groupName);
+
+        Connection connection = null;
+        try {
+            connection = DruidConfig.getConnection();
+            connection.setAutoCommit(false);
+        } catch (SQLException e) {
+            log.debug(e.getMessage());
+            throw new RuntimeException("系统繁忙，请稍后重试");
+        }
+
+        String sql = "delete from group_user where uid=? and gid = ?";
+
+        try(PreparedStatement preparedStatement = connection.prepareStatement(sql);) {
+            //这里要执行两次插入操作，因为好友表是双向的
+            preparedStatement.setInt(1,userId);
+            preparedStatement.setInt(2,groupId);
+            preparedStatement.executeUpdate();
+
+            //执行完了，提交事务
+            connection.commit();
+            //返回结果
+            return new DBMessage<String>(true, "删除群聊成功");
+
+        } catch (SQLException e) {
+            try {
+                //有任何异常，回滚事务
+                connection.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException("数据库繁忙，请稍后重试");
+            }
+            return new DBMessage<String>(false, "数据库繁忙，删除群聊失败");
+        }finally {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
     public DBMessage<String> createGroup(String creator,String groupName){
         UserMapper userMapper = new UserMapper();
         Integer creatorId = userMapper.getIdByNameFromUser(creator);
@@ -74,12 +119,17 @@ public class GroupMapper {
         List<GroupDto> content = getGroupListByName(joiner).getContent();
         for (GroupDto group : content) {
             if (group.getName().equals(groupName)){
-                return new DBMessage<>(false,"你已经在群里了，不能重复添加");
+                return new DBMessage<>(false,"不能重复添加");
             }
         }
 
         //得到群聊id
         Integer groupId = getIdByNameFromGroup(groupName);
+        if(groupId == null){
+            return new DBMessage<>(false,"该群聊不存在");
+        }
+
+
         //得到加入者的id
         UserMapper userMapper = new UserMapper();
         Integer joinerId = userMapper.getIdByNameFromUser(joiner);
@@ -231,7 +281,9 @@ public class GroupMapper {
                 return null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("数据库繁忙，请稍后重试");
+            log.error(e.getMessage());
+//            throw new RuntimeException("数据库繁忙，请稍后重试");
+            return null;
         }finally {
             try {
                 connection.close();

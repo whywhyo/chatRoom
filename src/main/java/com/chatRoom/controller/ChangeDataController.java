@@ -35,45 +35,51 @@ public class ChangeDataController {
 
     private String userName;
 
-    public void init(String userName){
+    public void init(String userName) {
         this.userName = userName;
     }
 
     @FXML
-    private void exitButtonOnAction(ActionEvent event){
+    private void exitButtonOnAction(ActionEvent event) {
         Stage stage = (Stage) exitButton.getScene().getWindow();
         stage.close();
     }
 
     @FXML
-    private void changeButtonOnAction(ActionEvent event){
-        ClientService clientService = new ClientService();
-        Message<String> message = new Message<>();
-        String passWord = newChangeTextField.getText();
-        message.setMessage(passWord);
-        message.setSender(this.userName);
-        if(clientService.changeDataRequest(message).equals("成功将请求发送给服务端")) {
-            tipLabel.setText("修改成功！");
-            changeButton.setDisable(true);
-        };
+    private void changeButtonOnAction(ActionEvent event) {
+        if (choseChangeModeComboBox.getValue().equals("更改密码")) {
+            if (!newChangeTextField.getText().equals("")) {
+                ClientService clientService = new ClientService();
+                Message<String> message = new Message<>();
+                String passWord = newChangeTextField.getText();
+                message.setMessage(passWord);
+                message.setSender(this.userName);
+                if (clientService.changeDataRequest(message).equals("成功将请求发送给服务端")) {
+                    tipLabel.setText("修改成功！");
+                    changeButton.setDisable(true);
+                }
+            }else {
+                tipLabel.setText("不能为空！");
+            }
+        }
     }
 
     public void initialize() {
         // 下拉框
         ObservableList<String> options = FXCollections.observableArrayList(
                 "更改密码",
-                "更改邮箱"
+                "更改邮箱(不支持)"
         );
         choseChangeModeComboBox.setItems(options);
 
         choseChangeModeComboBox.setOnAction(event -> {
             String selectedOption = choseChangeModeComboBox.getValue();
             System.out.println("选中的选项是：" + selectedOption);
-            if(selectedOption.equals("更改密码")){
+            if (selectedOption.equals("更改密码")) {
                 label2.setText("新 密 码:");
                 confirmTextField.setVisible(false);
 
-            }else if(selectedOption.equals("更改邮箱")){
+            } else if (selectedOption.equals("更改邮箱(不支持)")) {
                 label2.setText("新 邮 箱:");
                 confirmTextField.setVisible(true);
             }
