@@ -20,14 +20,16 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Callback;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.net.Socket;
 import java.util.*;
 import java.util.function.Consumer;
@@ -52,6 +54,8 @@ public class ChatController {
     private Button exitButton;
     @FXML
     private Button changeRegisterButton;
+    @FXML
+    private Button sendFileButton;
 
     @FXML
     private Label userLoginNameLabel;
@@ -65,6 +69,8 @@ public class ChatController {
     private String friendOrGroup;
 
     private Socket chatClientSocket;
+
+    private String receiveFilePath;
 
     List<SimpleStringProperty> newFriendDataList = new ArrayList<SimpleStringProperty>();
 
@@ -86,8 +92,15 @@ public class ChatController {
 
     Map<String, ObservableList<MessageData>> userMessageMap = new HashMap<>();
 
+    private Stage primaryStage;
+
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
+
     public void init() {
         userLoginNameLabel.setText(username);
+        this.receiveFilePath = "";
 
         //初始化
         renewFriendList();
@@ -140,20 +153,60 @@ public class ChatController {
 
                 log.info("接收者读到了信息");
                 if (readMessage.getMessageType() == MESSAGE_SEND) {
-                    String messageContent = (String) readMessage.getMessage();
-                    String sender = readMessage.getSender();
-                    log.info("收到来自{}的信息:{}", sender, messageContent);
+                    if (readMessage.getMessage() instanceof byte[]) {
+                        byte[] messageContent = (byte[]) readMessage.getMessage();
+                        String sender = readMessage.getSender();
+                        log.info("收到来自{}的文件信息", sender);
+                        Platform.runLater(() -> {
+                            if (this.receiveFilePath.equals("")) {
 
-                    // 存储进userMessageMap
-                    Platform.runLater(() -> {
-                        ObservableList<MessageData> messageDataList = userMessageMap.get(sender);
-                        MessageData messageData = new MessageData(sender, messageContent, "对方");
-                        messageDataList.add(messageData);
-                    });
+                                // 第一次接收文件时 弹窗确认存储路径
+                                DirectoryChooser directoryChooser = new DirectoryChooser();
+                                directoryChooser.setTitle("选择接收文件的文件夹路径");
+                                Stage stage = new Stage();
+                                stage.initOwner(this.primaryStage);
+                                File selectedDirectory = directoryChooser.showDialog(stage);
+                                this.receiveFilePath = selectedDirectory.getAbsolutePath();
+                                System.out.println("选择的文件夹：" + this.receiveFilePath);
+                            }
+                            if (!this.receiveFilePath.equals("")) {
+                                ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(messageContent);
+                                // 将 Buffered Image 对象保存到本地文件中
+                                try {
+                                    // 使用当前时间戳作为文件名
+                                    long timestamp = System.currentTimeMillis();
 
+                                    BufferedImage bufferedImage = ImageIO.read(byteArrayInputStream);
+                                    String savePath = this.receiveFilePath + "\\" + timestamp + ".png";
+                                    System.out.println(savePath);
+                                    ImageIO.write(bufferedImage, "PNG", new File(savePath));
+
+                                    // 存储进userMessageMap
+                                    Platform.runLater(() -> {
+                                        ObservableList<MessageData> messageDataList = userMessageMap.get(sender);
+                                        MessageData messageData = new MessageData(sender, savePath, "对方_图片");
+                                        messageDataList.add(messageData);
+                                    });
+                                } catch (IOException e) {
+                                    System.out.println(e);
+                                }
+                            }
+                        });
+                    }
+                    if (readMessage.getMessage() instanceof String) {
+
+                        String messageContentString = (String) readMessage.getMessage();
+                        String senderString = readMessage.getSender();
+                        log.info("收到来自{}的文本信息:{}", senderString, messageContentString);
+                        // 存储进userMessageMap
+                        Platform.runLater(() -> {
+                            ObservableList<MessageData> messageDataList = userMessageMap.get(senderString);
+                            MessageData messageData = new MessageData(senderString, messageContentString, "对方");
+                            messageDataList.add(messageData);
+                        });
+                    }
                     // TODO: 2023-06-02 收到信息后把记录存到本地
-                }
-                else if (readMessage.getMessageType() == FRIEND_INVITE) {
+                } else if (readMessage.getMessageType() == FRIEND_INVITE) {
                     //接收到一条好友申请
                     //页面这里把一条好友申请的信息加到对应的列表中
                     log.info("收到来自{}的好友申请", readMessage.getSender());
@@ -164,8 +217,7 @@ public class ChatController {
                         newFriendDataList.add(name);
                         observableAddFriendList.addAll(newFriendDataList);
                     });
-                }
-                else if (readMessage.getMessageType() == ACK_FRIEND_INVITE) {
+                } else if (readMessage.getMessageType() == ACK_FRIEND_INVITE) {
                     //接收到好友申请的结果，页面需要把结果展示在对应那条记录中
                     if (!(Boolean) readMessage.getMessage()) {
                         //如果拒绝了
@@ -179,8 +231,7 @@ public class ChatController {
                         ObservableList<MessageData> messageDataList = FXCollections.observableArrayList();
                         userMessageMap.put(readMessage.getSender(), messageDataList);
                     }
-                }
-                else if (readMessage.getMessageType() == GROUP_CHAT) {
+                } else if (readMessage.getMessageType() == GROUP_CHAT) {
                     //接收到一条群聊信息
                     String messageContent = (String) readMessage.getMessage();
                     String sender = readMessage.getSender();
@@ -191,16 +242,13 @@ public class ChatController {
                         MessageData messageData = new MessageData(sender, messageContent, "对方");
                         messageDataList.add(messageData);
                     });
-                }
-                else if (readMessage.getMessageType() == IS_DELETE){
+                } else if (readMessage.getMessageType() == IS_DELETE) {
                     String messageContent = (String) readMessage.getMessage();
                     log.info(messageContent);
                     renewFriendList();
-                }
-                else if(readMessage.getMessageType() == FRIEND_ONLINE){
+                } else if (readMessage.getMessageType() == FRIEND_ONLINE) {
                     renewFriendList();
-                }
-                else {
+                } else {
                     log.error("本线程接收到未知类型的对象");
                     throw new ChatRoomException("系统出现未知错误，请联系管理员");
                 }
@@ -259,17 +307,44 @@ public class ChatController {
     }
 
     @FXML
-    private void sendChatMessageButtonOnAction(ActionEvent event) {sendMessage();}
+    private void sendChatMessageButtonOnAction(ActionEvent event) {
+        sendMessage();
+    }
 
     @FXML
-    private void addNewFriendButtonOnAction(ActionEvent event) {addNewFriend();}
+    private void addNewFriendButtonOnAction(ActionEvent event) {
+        addNewFriend();
+    }
 
     @FXML
-    private void changeRegisterButtonOnAction(ActionEvent event) {changeRegister();}
+    private void changeRegisterButtonOnAction(ActionEvent event) {
+        changeRegister();
+    }
 
-    public void addNewFriend() {
+    @FXML
+    private void sendFileButtonOnButton(ActionEvent event) throws IOException {
+        Stage stage = (Stage) sendFileButton.getScene().getWindow();
+        FileChooser fileChooser = new FileChooser();
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null && isImageFile(selectedFile.toString()) && tmpReceiver != null) {
+            System.out.println(selectedFile);
+            Message<String> message = new Message<>();
+            message.setMessage(selectedFile.toString());
+            message.setSender(username);
+            message.setReceiver(tmpReceiver);
+            ClientService clientService = new ClientService();
+            clientService.sendMultiMedia(message);
+
+            // 更新MessageMap
+            ObservableList<MessageData> messageDataList = userMessageMap.get(tmpReceiver);
+            MessageData messageData = new MessageData(username, selectedFile.toString(), "本人_图片");
+            messageDataList.add(messageData);
+        }
+    }
+
+    private void addNewFriend() {
         Parent root = null;
-        AddNewFriendOrGroupController addNewFriendOrGroupController= new AddNewFriendOrGroupController();
+        AddNewFriendOrGroupController addNewFriendOrGroupController = new AddNewFriendOrGroupController();
         FXMLLoader fxmlLoader = new FXMLLoader();
         fxmlLoader.setLocation(getClass().getResource("/static/FXML/addNewFriendOrGroup.fxml"));
         addNewFriendOrGroupController.initializeWithChatController(this);
@@ -290,7 +365,7 @@ public class ChatController {
         }
     }
 
-    public void changeRegister() {
+    private void changeRegister() {
         Parent root = null;
         FXMLLoader loader = null;
         try {
@@ -307,7 +382,7 @@ public class ChatController {
         }
     }
 
-    public void newLogin() {
+    private void newLogin() {
         Parent root = null;
         try {
             root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/static/FXML/login.fxml")));
@@ -323,7 +398,7 @@ public class ChatController {
     //发送消息
     private void sendMessage() {
         System.out.println(this.tmpReceiver);
-        if(!StringUtils.isNullOrEmpty(this.tmpReceiver)) {
+        if (!StringUtils.isNullOrEmpty(this.tmpReceiver)) {
             String message = messageTextArea.getText();
             messageTextArea.clear();
 
@@ -335,9 +410,9 @@ public class ChatController {
             // 分辨是群聊消息还是个人消息
             ClientService clientService = new ClientService();
             System.out.println(friendOrGroup);
-            if (friendOrGroup.equals("个人")){
+            if (friendOrGroup.equals("个人")) {
                 clientService.sendMessage(stringMessage);
-            }else if(friendOrGroup.equals("群聊")){
+            } else if (friendOrGroup.equals("群聊")) {
                 clientService.sendMessageToGroup(stringMessage);
             }
 
@@ -349,7 +424,7 @@ public class ChatController {
     }
 
     // 从friendCell里面切换至好友对应的聊天信息
-    public void switchToMessageList(String friendUsername,String interFriendOrGroup) {
+    public void switchToMessageList(String friendUsername, String interFriendOrGroup) {
         this.tmpReceiver = friendUsername;
         this.friendOrGroup = interFriendOrGroup;
         chatListView.setItems(userMessageMap.get(friendUsername));
@@ -366,6 +441,10 @@ public class ChatController {
                         setGraphic(new HeMessageListCellController(item).getRoot());
                     } else if (item.getFlag().equals("本人")) {
                         setGraphic(new MyMessageListCellController(item).getRoot());
+                    } else if (item.getFlag().equals("对方_图片")){
+                        setGraphic(new HeMessageListCellController(item).getRoot());
+                    }else if(item.getFlag().equals("本人_图片")){
+                        setGraphic(new MyMessageListCellController(item).getRoot());
                     }
                 }
             }
@@ -373,7 +452,7 @@ public class ChatController {
     }
 
     // 刷新好友列表
-    public void renewFriendList(){
+    public void renewFriendList() {
         ClientService clientService = new ClientService();
         Message<String> message = new Message<>();
         message.setSender(username);
@@ -406,7 +485,7 @@ public class ChatController {
         });
     }
 
-    public void renewAddFriendList(){
+    public void renewAddFriendList() {
         Platform.runLater(() -> {
             observableAddFriendList.clear();
 
@@ -416,12 +495,28 @@ public class ChatController {
         });
     }
 
-    public void setUsername(String username,Socket chatClientSocket) {
+    public void setUsername(String username, Socket chatClientSocket) {
         this.username = username;
         this.chatClientSocket = chatClientSocket;
     }
 
-    public String getUsername(){
+    public String getUsername() {
         return this.username;
+    }
+
+
+    private static boolean isImageFile(String fileName) {
+        String extension = "";
+        int dotIndex = fileName.lastIndexOf(".");
+        if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+            extension = fileName.substring(dotIndex + 1);
+        }
+        if (!extension.equals("")) {
+            String lowercaseExtension = extension.toLowerCase();
+            return lowercaseExtension.equals("jpg")
+                    || lowercaseExtension.equals("jpeg")
+                    || lowercaseExtension.equals("png");
+        }
+        return false;
     }
 }

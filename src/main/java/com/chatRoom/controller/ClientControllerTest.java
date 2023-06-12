@@ -5,9 +5,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-
-import java.util.Objects;
 
 /**
  * @Author Mei_Deng
@@ -20,9 +17,11 @@ public class ClientControllerTest extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/static/FXML/login.fxml")));
-        primaryStage.initStyle(StageStyle.UNDECORATED);
-        primaryStage.setScene(new Scene(root,600,400));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/static/FXML/login.fxml"));
+        Parent root = loader.load();
+        LoginController controller = loader.getController();
+        controller.setPrimaryStage(primaryStage);
+        primaryStage.setScene(new Scene(root, 600,400));
         primaryStage.show();
     }
 

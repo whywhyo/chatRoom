@@ -45,6 +45,12 @@ public class LoginController {
 
     private Socket loginSocket;
 
+    private Stage primaryStage;
+
+    public void setPrimaryStage(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+    }
+
     @FXML
     public void loginButtonOnAction(ActionEvent event) {
 
@@ -157,6 +163,7 @@ public class LoginController {
             ChatController chatController = loader.getController();
             log.info("login传给chat的socket："+loginSocket);
             chatController.setUsername(username,loginSocket);
+            chatController.setPrimaryStage(this.primaryStage);
             chatController.init();
 
             registerStage.setScene(new Scene(root, 1000, 600));

@@ -7,9 +7,9 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="62.0" prefWidth="680.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane fx:id="root" prefHeight="62.0" prefWidth="680.0" style="-fx-background-color: #FFFFFF;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <AnchorPane fx:id="root" layoutY="2.0" prefHeight="67.0" prefWidth="680.0" style="-fx-background-color: #FFFFFF;">
+      <AnchorPane fx:id="son1" layoutY="2.0" prefHeight="67.0" prefWidth="680.0" style="-fx-background-color: #FFFFFF;">
          <children>
             <ImageView fitHeight="40.0" fitWidth="40.0" layoutX="7.0" layoutY="2.0" pickOnBounds="true" preserveRatio="true">
                <image>
@@ -22,6 +22,15 @@
                </font>
             </Button>
             <TextArea fx:id="messageTextArea" editable="false" layoutX="56.0" layoutY="26.0" prefHeight="38.0" prefWidth="400.0" text="message here" />
+         </children>
+      </AnchorPane>
+      <AnchorPane fx:id="son2" layoutX="55.0" layoutY="27.0" prefHeight="151.0" prefWidth="183.0">
+         <children>
+            <ImageView fx:id="messageImageView" fitHeight="300.0" fitWidth="200.0" layoutY="2.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../pic/pic_cannotFind.jpeg" />
+               </image>
+            </ImageView>
          </children>
       </AnchorPane>
    </children>

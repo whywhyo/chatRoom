@@ -355,7 +355,4 @@ public class ClientTest {
         clientService.getMyGroup(message);
     }
 
-
-
-
 }
